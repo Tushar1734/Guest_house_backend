@@ -61,6 +61,63 @@ const getAvailableRooms = async (req, res) => {
   }
 };
 
+//Update the room Details
+
+const updateRoom = async (req, res) => {
+  try {
+    const room_id = req.params.id;
+    const { room_type, room_number, status, facilities } = req.body;
+    if (!room_type || !room_number || !status || !facilities) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+    const pool = await poolPromise;
+    const result = await pool.request().query(`
+          UPDATE rooms 
+          SET 
+            room_type='${room_type}',
+            room_number='${room_number}',
+            status = '${status}',
+            facilities='${facilities}'
+          Where id=${room_id}      
+      `)
+
+      if(result.rowsAffected[0]>0){
+        res.status(200).json({message:"Room updated successfully....."});
+      }else{
+        res.status(400).json({message:"Room not found or no changes made.Please try again "})
+      }
+
+
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        message:
+          "There is something error at the server side please try again leter",
+        error: error.message,
+      });
+  }
+};
+
+
+const deleteRoom = async(req,res)=>{
+  try {
+      const {id} = req.params;
+      const pool= await poolPromise;
+      const result = await pool.request().query(`
+        DELETE FROM rooms WHERE id=${id};
+        `)
+        if(result.rowsAffected[0]>0){
+          res.status(200).json({message:"Room deleted successfully...."})
+        }else{
+          res.status(400).json({message:"Room not found or something went wrong please try again..."})
+        }
+
+  } catch (error) {
+    res.status(500).json({message:"There is something error while deleting the room ...",error:error.message})
+  }
+}
+
 const createRoom = async (req, res) => {
   try {
     const { room_type, room_number, status, facilities } = req.body;
@@ -78,14 +135,12 @@ VALUES ('${room_type}','${room_number}','${status}','${facilities}')`);
       return res.status(500).json({ message: "Room creation failed" });
     }
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "There is something error while creating the room ",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "There is something error while creating the room ",
+      error: error.message,
+    });
   }
 };
 
 // Export the controller function
-export { getRoomFacilities, getRoomTypes, getAvailableRooms,createRoom };
+export { getRoomFacilities, getRoomTypes, getAvailableRooms, createRoom ,updateRoom,deleteRoom};
